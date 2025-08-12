@@ -1,0 +1,5 @@
+Unknown options: '--max-peer-nodes=25', '--gas-price=0', '--gas-limit=0', '--qbft-validator-validators-enabled', '--qbft-validator-validator-addresses=0xad0d524c4c6e9527c0020ec745bdd963cc546994,0xcbfa896c6049744b99ba1cd1e5874ac4a93bbaaa,0x101b5a9b5d13f532a2d62a1339d2425e26fdb68b,0xdbf30f1de28957fade6cb47a58f02f4cafb36433', '--log-level=INFO'
+Possible solutions: --max-peers
+
+To display full help:
+besu [COMMAND] --help

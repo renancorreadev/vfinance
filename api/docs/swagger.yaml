@@ -1,0 +1,910 @@
+openapi: 3.0.3
+info:
+  title: MobX API - VFinance Registry
+  description: |
+    API para registro e consulta de contratos de financiamento automotivo utilizando blockchain Hyperledger Besu e contratos inteligentes UUPS (Universal Upgradeable Proxy Standard).
+
+    ## Características Principais:
+    - **Blockchain**: Hyperledger Besu com 4 nós
+    - **Smart Contract**: VFinanceRegistry.sol com padrão UUPS
+    - **Token ERC721**: Sistema de registry não-transferível
+    - **Autenticação**: JWT Bearer Token
+    - **Metadados**: Armazenamento off-chain com hash on-chain
+    - **Rastreabilidade**: Busca por Registry ID, Token ID, Chassi
+
+    ## Endpoints Principais:
+    - **Autenticação**: Geração e validação de tokens JWT
+    - **Contratos**: Registro e consulta de contratos de financiamento
+    - **Metadados**: CRUD de metadados de veículos
+    - **Estatísticas**: Informações agregadas do sistema
+
+    Para testar a API, primeiro obtenha um token JWT no endpoint `/api/auth/token`.
+  version: 2.0.0
+  contact:
+    name: MobX API Support
+    email: support@mobx-api.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor de Desenvolvimento Local
+  - url: http://147.93.11.54:3001
+    description: Servidor de Produção
+
+tags:
+  - name: health
+    description: Health check da API
+  - name: auth
+    description: Autenticação JWT
+  - name: contracts
+    description: Operações com contratos de financiamento
+  - name: metadata
+    description: Operações CRUD para metadados de veículos
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health Check
+      description: Verifica se a API está funcionando corretamente
+      responses:
+        '200':
+          description: API funcionando corretamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+
+  /api/auth/token:
+    post:
+      tags:
+        - auth
+      summary: Gerar Token JWT
+      description: Gera um token JWT válido para autenticação nos endpoints protegidos
+      responses:
+        '200':
+          description: Token gerado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Token JWT válido
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/validate:
+    get:
+      tags:
+        - auth
+      summary: Validar Token JWT
+      description: Valida se um token JWT é válido e está ativo
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token válido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Token válido"
+        '401':
+          description: Token inválido ou expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts:
+    post:
+      tags:
+        - contracts
+      summary: Registrar Novo Contrato
+      description: |
+        Registra um novo contrato de financiamento na blockchain.
+
+        **Processo:**
+        1. Valida dados de entrada
+        2. Verifica se o contrato já existe
+        3. Registra na blockchain (cria token ERC721)
+        4. Armazena metadados off-chain
+        5. Salva registro local no banco de dados
+
+        **Retorna:** Token ID, hash dos metadados e hash da transação
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractRegistrationRequest'
+            example:
+              regConId: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+              numeroContrato: "250"
+              dataContrato: "2024-01-15"
+              vehicleData:
+                regConId: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+                numeroContrato: "250"
+                dataContrato: "2024-01-15"
+                chassiVeiculo: "8A1CB8205DL478385"
+                placaVeiculo: "ABC1234"
+                marcaVeiculo: "TOYOTA"
+                modeloVeiculo: "COROLLA ALTIS 2.0"
+                valorTotalContrato: "85000.0"
+                cnpjAgenteFinanceiro: "03817784000133"
+                nomeAgenteFinanceiro: "NATAL CAR VEICULOS LTDA"
+      responses:
+        '201':
+          description: Contrato registrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractRegistrationResponse'
+        '400':
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Contrato já existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token JWT inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts/{regConId}:
+    get:
+      tags:
+        - contracts
+      summary: Buscar Contrato por Registry ID
+      description: Busca um contrato específico pelo Registry ID, retornando dados on-chain e off-chain
+      parameters:
+        - name: regConId
+          in: path
+          required: true
+          description: Registry ID único do contrato
+          schema:
+            type: string
+          example: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteContractData'
+        '404':
+          description: Contrato não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts/token/{tokenId}:
+    get:
+      tags:
+        - contracts
+      summary: Buscar Contrato por Token ID
+      description: Busca um contrato específico pelo Token ID do ERC721
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          description: Token ID do ERC721 gerado na blockchain
+          schema:
+            type: string
+          example: "1"
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteContractData'
+        '400':
+          description: Token ID inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Contrato não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts/chassis/{chassis}:
+    get:
+      tags:
+        - contracts
+      summary: Buscar Contrato por Chassi
+      description: Busca um contrato específico pelo número do chassi do veículo
+      parameters:
+        - name: chassis
+          in: path
+          required: true
+          description: Número do chassi do veículo
+          schema:
+            type: string
+          example: "8A1CB8205DL478385"
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteContractData'
+        '404':
+          description: Contrato não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts/active:
+    get:
+      tags:
+        - contracts
+      summary: Listar Contratos Ativos
+      description: |
+        Lista contratos ativos com informações resumidas incluindo:
+        - Token ID do ERC721
+        - Informações básicas do contrato
+        - Nome da marca e modelo do veículo
+        - Valor total do financiamento
+        - Status ativo/inativo
+
+        Suporte à paginação através de offset e limit.
+      parameters:
+        - name: offset
+          in: query
+          description: Número de registros a pular (paginação)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: limit
+          in: query
+          description: Máximo de registros a retornar
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
+      responses:
+        '200':
+          description: Lista de contratos ativos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveContractsResponse'
+        '400':
+          description: Parâmetros de paginação inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts/hash/{hash}:
+    get:
+      tags:
+        - contracts
+      summary: Buscar Contrato por Hash dos Metadados
+      description: Busca um contrato específico pelo hash dos metadados
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          description: Hash hexadecimal dos metadados
+          schema:
+            type: string
+          example: "0x1234567890abcdef..."
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteContractData'
+        '404':
+          description: Contrato não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts/stats:
+    get:
+      tags:
+        - contracts
+      summary: Estatísticas dos Contratos
+      description: |
+        Retorna estatísticas agregadas do sistema:
+        - Total de contratos registrados na blockchain
+        - Número de contratos ativos no banco local
+        - Versão atual do smart contract
+        - Outras métricas do sistema
+      responses:
+        '200':
+          description: Estatísticas obtidas com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '500':
+          description: Erro ao obter estatísticas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts/metadata-url/{hash}:
+    get:
+      tags:
+        - contracts
+      summary: Obter URL dos Metadados por Hash
+      description: Retorna a URL completa para acessar os metadados através do hash
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          description: Hash hexadecimal dos metadados
+          schema:
+            type: string
+          example: "0x1234567890abcdef..."
+      responses:
+        '200':
+          description: URL obtida com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataUrlResponse'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/contracts/metadata-url/registry/{registryId}:
+    get:
+      tags:
+        - contracts
+      summary: Obter URL dos Metadados por Registry ID
+      description: Retorna a URL completa para acessar os metadados através do Registry ID
+      parameters:
+        - name: registryId
+          in: path
+          required: true
+          description: Registry ID do contrato
+          schema:
+            type: string
+          example: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+      responses:
+        '200':
+          description: URL obtida com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataUrlResponse'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/metadata/{hash}:
+    post:
+      tags:
+        - metadata
+      summary: Armazenar Metadados
+      description: Armazena metadados de um veículo com hash específico
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          description: Hash único dos metadados
+          schema:
+            type: string
+          example: "abc123hash"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleData'
+      responses:
+        '201':
+          description: Metadados armazenados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Metadados armazenados com sucesso"
+        '401':
+          description: Token JWT inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - metadata
+      summary: Buscar Metadados
+      description: Busca metadados de um veículo pelo hash
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          description: Hash dos metadados
+          schema:
+            type: string
+          example: "abc123hash"
+      responses:
+        '200':
+          description: Metadados encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleData'
+        '404':
+          description: Metadados não encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - metadata
+      summary: Atualizar Metadados
+      description: Atualiza metadados de um veículo existente
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          description: Hash dos metadados
+          schema:
+            type: string
+          example: "abc123hash"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleData'
+      responses:
+        '200':
+          description: Metadados atualizados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Metadados atualizados com sucesso"
+        '401':
+          description: Token JWT inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Metadados não encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - metadata
+      summary: Remover Metadados
+      description: Remove metadados de um veículo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          description: Hash dos metadados
+          schema:
+            type: string
+          example: "abc123hash"
+      responses:
+        '200':
+          description: Metadados removidos com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Metadados removidos com sucesso"
+        '401':
+          description: Token JWT inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Metadados não encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT para autenticação.
+
+        Para obter um token:
+        1. Faça uma requisição POST para `/api/auth/token`
+        2. Use o token retornado no header: `Authorization: Bearer <token>`
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Mensagem de erro
+        code:
+          type: integer
+          description: Código do erro (opcional)
+      required:
+        - error
+      example:
+        error: "Token JWT inválido"
+
+    VehicleData:
+      type: object
+      description: Dados completos do veículo e contrato de financiamento
+      properties:
+        regConId:
+          type: string
+          description: Registry ID único do contrato
+          example: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+        numeroContrato:
+          type: string
+          description: Número do contrato
+          example: "250"
+        dataContrato:
+          type: string
+          description: Data do contrato (YYYY-MM-DD)
+          example: "2024-01-15"
+        cnpjAgenteFinanceiro:
+          type: string
+          description: CNPJ do agente financeiro
+          example: "03817784000133"
+        nomeAgenteFinanceiro:
+          type: string
+          description: Nome do agente financeiro
+          example: "NATAL CAR VEICULOS LTDA"
+        chassiVeiculo:
+          type: string
+          description: Número do chassi do veículo
+          example: "8A1CB8205DL478385"
+        placaVeiculo:
+          type: string
+          description: Placa do veículo
+          example: "ABC1234"
+        marcaVeiculo:
+          type: string
+          description: Marca do veículo
+          example: "TOYOTA"
+        modeloVeiculo:
+          type: string
+          description: Modelo do veículo
+          example: "COROLLA ALTIS 2.0"
+        valorTotalContrato:
+          type: string
+          description: Valor total do contrato
+          example: "85000.0"
+        anoFabricacaoVeiculo:
+          type: string
+          description: Ano de fabricação do veículo
+          example: "2023"
+        anoModeloVeiculo:
+          type: string
+          description: Ano do modelo do veículo
+          example: "2024"
+        # Outros campos conforme necessário...
+      required:
+        - regConId
+        - numeroContrato
+        - dataContrato
+        - chassiVeiculo
+        - placaVeiculo
+        - marcaVeiculo
+        - modeloVeiculo
+        - valorTotalContrato
+
+    ContractRegistrationRequest:
+      type: object
+      description: Requisição para registrar um novo contrato
+      properties:
+        regConId:
+          type: string
+          description: Registry ID único do contrato
+          example: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+        numeroContrato:
+          type: string
+          description: Número do contrato
+          example: "250"
+        dataContrato:
+          type: string
+          description: Data do contrato (YYYY-MM-DD)
+          example: "2024-01-15"
+        vehicleData:
+          $ref: '#/components/schemas/VehicleData'
+      required:
+        - regConId
+        - numeroContrato
+        - dataContrato
+        - vehicleData
+
+    ContractRegistrationResponse:
+      type: object
+      description: Resposta do registro de contrato
+      properties:
+        success:
+          type: boolean
+          description: Indica se o registro foi bem-sucedido
+          example: true
+        message:
+          type: string
+          description: Mensagem de confirmação
+          example: "Contrato registrado com sucesso"
+        regConId:
+          type: string
+          description: Registry ID do contrato registrado
+          example: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+        metadataHash:
+          type: string
+          description: Hash hexadecimal dos metadados
+          example: "0x1234567890abcdef1234567890abcdef12345678"
+        txHash:
+          type: string
+          description: Hash da transação na blockchain
+          example: "0xabcdef1234567890abcdef1234567890abcdef12"
+      required:
+        - success
+        - message
+        - regConId
+        - metadataHash
+        - txHash
+
+    ContractRecord:
+      type: object
+      description: Dados on-chain do contrato
+      properties:
+        regConId:
+          type: string
+          description: Registry ID do contrato
+          example: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+        numeroContrato:
+          type: string
+          description: Número do contrato
+          example: "250"
+        dataContrato:
+          type: string
+          description: Data do contrato
+          example: "2024-01-15"
+        metadataHash:
+          type: string
+          description: Hash dos metadados
+          example: "0x1234567890abcdef..."
+        timestamp:
+          type: integer
+          format: int64
+          description: Timestamp Unix do registro
+          example: 1705350000
+        registeredBy:
+          type: string
+          description: Endereço Ethereum que registrou o contrato
+          example: "0x742d35Cc6C4C56C8aE8E73E2B5C7A7e6E8F73D9E"
+        active:
+          type: boolean
+          description: Status ativo do contrato
+          example: true
+
+    CompleteContractData:
+      type: object
+      description: Dados completos do contrato (on-chain + off-chain)
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            onChain:
+              $ref: '#/components/schemas/ContractRecord'
+            offChain:
+              $ref: '#/components/schemas/VehicleData'
+      required:
+        - success
+        - data
+
+    ContractSummary:
+      type: object
+      description: Resumo dos dados do contrato para listagem
+      properties:
+        tokenId:
+          type: string
+          description: Token ID do ERC721
+          example: "1"
+        regConId:
+          type: string
+          description: Registry ID do contrato
+          example: "6193a9b1-38a8-4d4b-a21a-8a8ca9aef9c9"
+        numeroContrato:
+          type: string
+          description: Número do contrato
+          example: "250"
+        dataContrato:
+          type: string
+          description: Data do contrato
+          example: "2024-01-15"
+        metadataHash:
+          type: string
+          description: Hash dos metadados
+          example: "0x1234567890abcdef..."
+        totalValue:
+          type: string
+          description: Valor total do contrato
+          example: "85000"
+        brandName:
+          type: string
+          description: Nome da marca do veículo
+          example: "TOYOTA"
+        modelName:
+          type: string
+          description: Nome do modelo do veículo
+          example: "COROLLA ALTIS 2.0"
+        active:
+          type: boolean
+          description: Status ativo do contrato
+          example: true
+        timestamp:
+          type: integer
+          format: int64
+          description: Timestamp Unix do registro
+          example: 1705350000
+
+    ActiveContractsResponse:
+      type: object
+      description: Resposta da listagem de contratos ativos
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            contracts:
+              type: array
+              items:
+                $ref: '#/components/schemas/ContractSummary'
+            total:
+              type: integer
+              description: Total de contratos na resposta
+              example: 10
+            offset:
+              type: integer
+              description: Offset usado na consulta
+              example: 0
+            limit:
+              type: integer
+              description: Limit usado na consulta
+              example: 10
+
+    StatsResponse:
+      type: object
+      description: Resposta das estatísticas do sistema
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            totalContracts:
+              type: integer
+              format: int64
+              description: Total de contratos registrados na blockchain
+              example: 1250
+            activeContracts:
+              type: integer
+              format: int64
+              description: Número de contratos ativos no banco local
+              example: 1200
+            contractVersion:
+              type: string
+              description: Versão atual do smart contract
+              example: "2.0.0"
+
+    MetadataUrlResponse:
+      type: object
+      description: Resposta com URL dos metadados
+      properties:
+        success:
+          type: boolean
+          example: true
+        url:
+          type: string
+          description: URL completa para acessar os metadados
+          example: "https://api.mobx.com/metadata/0x1234567890abcdef..."
+
+security:
+  - bearerAuth: []

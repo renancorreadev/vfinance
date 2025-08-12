@@ -1,0 +1,20 @@
+[Unit]
+Description=Besu Node 1 - QBFT Validator
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/besu/Node-1
+Environment="JAVA_HOME=/usr/lib/jvm/java-1.21.0-openjdk-amd64"
+ExecStart=/home/ubuntu/besu/Node-1/run.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=besu-node-1
+
+[Install]
+WantedBy=multi-user.target
