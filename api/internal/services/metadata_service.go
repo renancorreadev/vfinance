@@ -4,9 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"vfinance-api/internal/models"
 
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -19,19 +20,24 @@ func NewMetadataService(db *gorm.DB) *MetadataService {
 }
 
 func (s *MetadataService) StoreMetadata(hash string, vehicleData models.VehicleData) error {
-	// Verificar se hash já existe
+	// Debug: verificar se hash já existe
 	var existing models.VehicleMetadata
 	if err := s.db.First(&existing, "hash = ?", hash).Error; err == nil {
-		return errors.New("hash já existe")
+		// Hash já existe - vamos ver o que tem lá
+		return fmt.Errorf("hash já existe no banco: %s (dados existentes: %s)", hash, string(existing.VehicleData))
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// Erro diferente de "não encontrado"
+		return fmt.Errorf("erro ao verificar hash existente: %w", err)
 	}
 
+	// Hash não existe, podemos inserir
 	// Converter para JSON
 	jsonData, err := json.Marshal(vehicleData)
 	if err != nil {
 		return err
 	}
 
-	// Criar registro
+	// Criar registro (hash já foi validado pelo contrato)
 	metadata := models.VehicleMetadata{
 		Hash:        hash,
 		VehicleData: jsonData,

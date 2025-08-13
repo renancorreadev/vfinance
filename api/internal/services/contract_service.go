@@ -198,12 +198,6 @@ func (s *ContractService) RegisterContract(regConId, numeroContrato, dataContrat
 		return nil, fmt.Errorf("contrato com regConId %s já existe", regConId)
 	}
 
-	// Gerar hash dos metadados
-	metadataHash, err := s.metadataService.GenerateHash(vehicleData)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao gerar hash dos metadados: %w", err)
-	}
-
 	// Converter data do contrato para timestamp
 	contractDate, err := parseContractDate(dataContrato)
 	if err != nil {
@@ -231,7 +225,14 @@ func (s *ContractService) RegisterContract(regConId, numeroContrato, dataContrat
 		return nil, fmt.Errorf("erro ao registrar contrato na blockchain: %w", err)
 	}
 
-	// Armazenar metadados no banco de dados
+	// Converter metadataHash retornado pelo contrato para string hexadecimal
+	metadataHash := hex.EncodeToString(result.MetadataHash[:])
+
+	// Debug: log do hash retornado
+	fmt.Printf("DEBUG: metadataHash retornado pelo contrato: %s\n", metadataHash)
+	fmt.Printf("DEBUG: result.MetadataHash (bytes): %v\n", result.MetadataHash)
+
+	// Armazenar metadados no banco de dados utilizando o hash gerado on-chain
 	err = s.metadataService.StoreMetadata(metadataHash, vehicleData)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao armazenar metadados: %w", err)

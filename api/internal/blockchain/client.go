@@ -654,27 +654,38 @@ type ContractRegisteredEvent struct {
 func (c *Client) parseContractRegisteredEvent(log *types.Log) (*ContractRegisteredEvent, error) {
 	event := &ContractRegisteredEvent{}
 
-	// Parse indexed topics
+	// Parse indexed topics (tokenId, registryIdHash, chassisHash)
 	if len(log.Topics) >= 4 {
 		event.TokenId = log.Topics[1].Big()
 		copy(event.RegistryIdHash[:], log.Topics[2][:])
 		copy(event.ChassisHash[:], log.Topics[3][:])
 	}
 
-	// Parse non-indexed data
+	// Parse non-indexed data (metadataHash, timestamp)
+	// O evento tem 2 parâmetros não-indexados: metadataHash e timestamp
 	var unpacked []interface{}
 	err := c.contractABI.UnpackIntoInterface(&unpacked, ContractRegisteredEventName, log.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unpack event data: %w", err)
 	}
 
+	// Verificar se temos os 2 parâmetros esperados
 	if len(unpacked) >= 2 {
+		// metadataHash é o primeiro parâmetro não-indexado
 		if metadataHash, ok := unpacked[0].([32]byte); ok {
 			event.MetadataHash = metadataHash
+		} else {
+			return nil, fmt.Errorf("failed to parse metadataHash from event data")
 		}
+
+		// timestamp é o segundo parâmetro não-indexado
 		if timestamp, ok := unpacked[1].(uint32); ok {
 			event.Timestamp = timestamp
+		} else {
+			return nil, fmt.Errorf("failed to parse timestamp from event data")
 		}
+	} else {
+		return nil, fmt.Errorf("expected 2 non-indexed parameters, got %d", len(unpacked))
 	}
 
 	return event, nil
