@@ -1,0 +1,1129 @@
+{
+    "info": {
+        "_postman_id": "mobx-api-collection-v2",
+        "name": "MobX API - V3 (Blockchain + Hybrid)",
+        "description": "Collection completa para testar a API MobX - Sistema de Metadados, Contratos Híbridos e Consultas On-Chain",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "version": "3.0.0"
+    },
+    "item": [
+        {
+            "name": "Health Check",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/health",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "health"
+                    ]
+                },
+                "description": "Verifica se a API está funcionando"
+            }
+        },
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Generate Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    if (response.token) {",
+                                    "        pm.collectionVariables.set('jwt_token', response.token);",
+                                    "        console.log('Token JWT salvo automaticamente');",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/token",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "token"
+                            ]
+                        },
+                        "description": "Gera um token JWT válido para autenticação"
+                    }
+                },
+                {
+                    "name": "Validate Token",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/validate",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "validate"
+                            ]
+                        },
+                        "description": "Valida um token JWT"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Blockchain (On-Chain Only)",
+            "description": "Consultas diretas ao contrato inteligente - apenas dados on-chain",
+            "item": [
+                {
+                    "name": "Get Contract by Token ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contract/token/{{token_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contract",
+                                "token",
+                                "{{token_id}}"
+                            ]
+                        },
+                        "description": "Busca contrato on-chain por Token ID do ERC721"
+                    }
+                },
+                {
+                    "name": "Get Contract by Registry ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contract/registry/{{reg_con_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contract",
+                                "registry",
+                                "{{reg_con_id}}"
+                            ]
+                        },
+                        "description": "Busca contrato on-chain por Registry ID"
+                    }
+                },
+                {
+                    "name": "Get Contract by Hash",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contract/hash/{{metadata_hash}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contract",
+                                "hash",
+                                "{{metadata_hash}}"
+                            ]
+                        },
+                        "description": "Busca contrato on-chain por Metadata Hash"
+                    }
+                },
+                {
+                    "name": "Get Contract by Chassis",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contract/chassis/{{test_chassis}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contract",
+                                "chassis",
+                                "{{test_chassis}}"
+                            ]
+                        },
+                        "description": "Busca contrato on-chain por Chassi"
+                    }
+                },
+                {
+                    "name": "Get Active Contracts",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contracts/active?offset=0&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contracts",
+                                "active"
+                            ],
+                            "query": [
+                                {
+                                    "key": "offset",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "Lista contratos ativos on-chain com paginação"
+                    }
+                },
+                {
+                    "name": "Get Total Supply",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contracts/total",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contracts",
+                                "total"
+                            ]
+                        },
+                        "description": "Obtém total de contratos on-chain"
+                    }
+                },
+                {
+                    "name": "Check Contract Exists",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contract/exists/{{reg_con_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contract",
+                                "exists",
+                                "{{reg_con_id}}"
+                            ]
+                        },
+                        "description": "Verifica se contrato existe on-chain"
+                    }
+                },
+                {
+                    "name": "Check Hash Exists",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/hash/exists/{{metadata_hash}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "hash",
+                                "exists",
+                                "{{metadata_hash}}"
+                            ]
+                        },
+                        "description": "Verifica se hash existe on-chain"
+                    }
+                },
+                {
+                    "name": "Get Brand Name",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/brand/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "brand",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtém nome da marca por ID on-chain"
+                    }
+                },
+                {
+                    "name": "Get Model Name",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/model/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "model",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtém nome do modelo por ID on-chain"
+                    }
+                },
+                {
+                    "name": "Get Metadata URL by Hash",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/metadata-url/{{metadata_hash}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "metadata-url",
+                                "{{metadata_hash}}"
+                            ]
+                        },
+                        "description": "Obtém URL dos metadados por hash on-chain"
+                    }
+                },
+                {
+                    "name": "Get Metadata URL by Registry ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/metadata-url/registry/{{reg_con_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "metadata-url",
+                                "registry",
+                                "{{reg_con_id}}"
+                            ]
+                        },
+                        "description": "Obtém URL dos metadados por registry ID on-chain"
+                    }
+                },
+                {
+                    "name": "Get Contract Version",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/version",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "version"
+                            ]
+                        },
+                        "description": "Obtém versão do contrato inteligente"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Contracts (Hybrid - On-Chain + Off-Chain)",
+            "description": "Operações híbridas que combinam dados on-chain e off-chain",
+            "item": [
+                {
+                    "name": "Register Contract",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    if (response.metadataHash) {",
+                                    "        pm.collectionVariables.set('metadata_hash', response.metadataHash);",
+                                    "        console.log('Hash dos metadados salvo: ' + response.metadataHash);",
+                                    "    }",
+                                    "    if (response.regConId) {",
+                                    "        pm.collectionVariables.set('reg_con_id', response.regConId);",
+                                    "        console.log('Registry ID salvo: ' + response.regConId);",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "// Gerar um UUID único para este request",
+                                    "const uniqueRegConId = pm.variables.replaceIn('{{$randomUUID}}');",
+                                    "// Salvar nas variáveis da collection para usar no vehicleData",
+                                    "pm.collectionVariables.set('current_reg_con_id', uniqueRegConId);",
+                                    "console.log('RegConId gerado para este request:', uniqueRegConId);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"regConId\": \"{{current_reg_con_id}}\",\n  \"numeroContrato\": \"{{$randomInt}}\",\n  \"dataContrato\": \"2024-01-15\",\n  \"vehicleData\": {\n    \"regConId\": \"{{current_reg_con_id}}\",\n    \"numeroContrato\": \"{{$randomInt}}\",\n    \"dataContrato\": \"2024-01-15\",\n    \"cnpjAgenteFinanceiro\": \"03817784000133\",\n    \"nomeAgenteFinanceiro\": \"NATAL CAR VEICULOS LTDA\",\n    \"enderecoAgenteFinanceiro\": \"Rua das Flores, 123\",\n    \"numeroEnderecoAgenteFinanceiro\": \"123\",\n    \"complementoEnderecoAgenteFinanceiro\": \"Sala 101\",\n    \"bairroEnderecoAgenteFinanceiro\": \"Centro\",\n    \"nomeMunicipioEnderecoAgenteFinanceiro\": \"Natal\",\n    \"ufEnderecoAgenteFinanceiro\": \"RN\",\n    \"cepEnderecoAgenteFinanceiro\": \"59000-000\",\n    \"telefoneAgenteFinanceiro\": \"(84) 3333-4444\",\n    \"emailAgenteFinanceiro\": \"contato@natalcar.com.br\",\n    \"cpfCnpjProprietario\": \"12345678901\",\n    \"nomeProprietario\": \"João da Silva\",\n    \"enderecoProprietario\": \"Av. Principal, 456\",\n    \"numeroEnderecoProprietario\": \"456\",\n    \"bairroEnderecoProprietario\": \"Lagoa Nova\",\n    \"nomeMunicipioEnderecoProprietario\": \"Natal\",\n    \"ufEnderecoProprietario\": \"RN\",\n    \"cepEnderecoProprietario\": \"59075-000\",\n    \"telefoneProprietario\": \"(84) 9999-8888\",\n    \"emailProprietario\": \"joao@email.com\",\n    \"veiculoZeroKm\": true,\n    \"chassiVeiculo\": \"{{$randomAlphaNumeric}}{{$randomInt}}{{$randomAlphaNumeric}}\",\n    \"chassiRemarcadoVeiculo\": \"\",\n    \"placaVeiculo\": \"ABC{{$randomInt}}\",\n    \"tipoPlacaVeiculo\": \"MERCOSUL\",\n    \"ufPlacaVeiculo\": \"RN\",\n    \"renavamVeiculo\": \"{{$randomInt}}\",\n    \"anoFabricacaoVeiculo\": \"2024\",\n    \"anoModeloVeiculo\": \"2024\",\n    \"numeroRestricaoVeiculo\": \"{{$randomInt}}\",\n    \"especieVeiculo\": \"AUTOMOVEL\",\n    \"marcaVeiculo\": \"TOYOTA\",\n    \"modeloVeiculo\": \"COROLLA ALTIS 2.0\",\n    \"tipoRestricacaoContrato\": \"ALIENACAO FIDUCIARIA\",\n    \"ufRegistroContrato\": \"RN\",\n    \"cnpjResponsavelPeloRegistro\": \"03817784000133\",\n    \"valorTotalContrato\": \"85000.0\",\n    \"valorParcelaContrato\": \"1416.67\",\n    \"quantidadeParcelasContrato\": \"60\",\n    \"taxaJurosMesContrato\": \"1.2\",\n    \"taxaJurosMesAnoContrato\": \"15.39\",\n    \"possuiJurosMultaContrato\": \"S\",\n    \"taxaJurosMultaContrato\": \"2.0\",\n    \"possuiJurosMoraDiaContrato\": \"S\",\n    \"taxaJurosMoraDiaContrato\": \"0.033\",\n    \"valorCustoRegistroContrato\": \"150.00\",\n    \"valorIofContrato\": \"425.00\",\n    \"dataVencimentoPrimeiraParcelaContrato\": \"2024-02-15\",\n    \"dataVencimentoUltimaParcelaContrato\": \"2029-01-15\",\n    \"dataLiberacaoCreditoContrato\": \"2024-01-15\",\n    \"cidadeLiberacaoCreditoContrato\": \"Natal\",\n    \"ufLiberacaoCreditoContrato\": \"RN\",\n    \"indiceCorrecaoContrato\": \"IPCA\",\n    \"numeroGrupoConsorcioContrato\": \"\",\n    \"numeroCotaConsorcioContrato\": \"\",\n    \"indicativoPenalidadeContrato\": \"S\",\n    \"penalidadeContrato\": \"3.0\",\n    \"indicativoComissaoContrato\": \"S\",\n    \"comissaoContrato\": \"2.5\",\n    \"categoriaVeiculo\": \"PASSEIO\"\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/contracts",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contracts"
+                            ]
+                        },
+                        "description": "Registra novo contrato (híbrido - blockchain + banco local)"
+                    }
+                },
+                {
+                    "name": "Get Contract by Registry ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/contracts/{{reg_con_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contracts",
+                                "{{reg_con_id}}"
+                            ]
+                        },
+                        "description": "Busca contrato híbrido por Registry ID"
+                    }
+                },
+                {
+                    "name": "Get Contract by Hash",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/contracts/hash/{{metadata_hash}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contracts",
+                                "hash",
+                                "{{metadata_hash}}"
+                            ]
+                        },
+                        "description": "Busca contrato híbrido por Metadata Hash"
+                    }
+                },
+                {
+                    "name": "Get Contract by Chassis",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/contracts/chassis/{{test_chassis}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contracts",
+                                "chassis",
+                                "{{test_chassis}}"
+                            ]
+                        },
+                        "description": "Busca contrato híbrido por Chassi"
+                    }
+                },
+                {
+                    "name": "Get Active Contracts",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/contracts/active?offset=0&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contracts",
+                                "active"
+                            ],
+                            "query": [
+                                {
+                                    "key": "offset",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "Lista contratos ativos (híbrido)"
+                    }
+                },
+                {
+                    "name": "Get Contract Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/contracts/stats",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "contracts",
+                                "stats"
+                            ]
+                        },
+                        "description": "Estatísticas dos contratos (híbrido)"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Metadata",
+            "description": "Operações CRUD para metadados de veículos",
+            "item": [
+                {
+                    "name": "Store Metadata",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "// Gerar um UUID único para este request",
+                                    "const uniqueRegConId = pm.variables.replaceIn('{{$randomUUID}}');",
+                                    "// Salvar nas variáveis da collection para usar no body",
+                                    "pm.collectionVariables.set('current_reg_con_id', uniqueRegConId);",
+                                    "console.log('RegConId gerado para este request:', uniqueRegConId);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"regConId\": \"{{current_reg_con_id}}\",\n  \"numeroContrato\": \"{{$randomInt}}\",\n  \"dataContrato\": \"2024-01-15\",\n  \"cnpjAgenteFinanceiro\": \"03817784000133\",\n  \"nomeAgenteFinanceiro\": \"NATAL CAR VEICULOS LTDA\",\n  \"enderecoAgenteFinanceiro\": \"Rua das Flores, 123\",\n  \"chassiVeiculo\": \"{{$randomAlphaNumeric}}{{$randomInt}}{{$randomInt}}{{$randomAlphaNumeric}}\",\n  \"placaVeiculo\": \"ABC{{$randomInt}}\",\n  \"marcaVeiculo\": \"TOYOTA\",\n  \"modeloVeiculo\": \"COROLLA\",\n  \"valorTotalContrato\": \"50000.00\",\n  \"valorParcelaContrato\": \"833.33\",\n  \"quantidadeParcelasContrato\": \"60\",\n  \"taxaJurosMesContrato\": \"1.2\",\n  \"veiculoZeroKm\": true,\n  \"anoFabricacaoVeiculo\": \"2024\",\n  \"anoModeloVeiculo\": \"2024\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/metadata/{{metadata_hash}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "metadata",
+                                "{{metadata_hash}}"
+                            ]
+                        },
+                        "description": "Armazena metadados de um veículo"
+                    }
+                },
+                {
+                    "name": "Get Metadata",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/metadata/{{metadata_hash}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "metadata",
+                                "{{metadata_hash}}"
+                            ]
+                        },
+                        "description": "Busca metadados de um veículo pelo hash"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Testing Scenarios",
+            "description": "Cenários de teste automatizados",
+            "item": [
+                {
+                    "name": "Blockchain Only Test",
+                    "item": [
+                        {
+                            "name": "1. Get Contract Version",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test('Versão do contrato obtida', function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "    const response = pm.response.json();",
+                                            "    pm.expect(response.success).to.be.true;",
+                                            "    pm.expect(response.data.version).to.not.be.undefined;",
+                                            "    console.log('Versão do contrato:', response.data.version);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/blockchain/version",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "blockchain",
+                                        "version"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "2. Get Total Supply",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test('Total supply obtido', function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "    const response = pm.response.json();",
+                                            "    pm.expect(response.success).to.be.true;",
+                                            "    pm.expect(response.data.totalSupply).to.not.be.undefined;",
+                                            "    console.log('Total supply:', response.data.totalSupply);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/blockchain/contracts/total",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "blockchain",
+                                        "contracts",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Hybrid Contract Test",
+                    "item": [
+                        {
+                            "name": "1. Generate Auth Token",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test('Token gerado com sucesso', function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "    const response = pm.response.json();",
+                                            "    pm.expect(response.token).to.not.be.undefined;",
+                                            "    pm.collectionVariables.set('jwt_token', response.token);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/auth/token",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "auth",
+                                        "token"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "2. Register New Contract",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test('Contrato registrado com sucesso', function () {",
+                                            "    pm.response.to.have.status(201);",
+                                            "    const response = pm.response.json();",
+                                            "    pm.expect(response.success).to.be.true;",
+                                            "    pm.expect(response.metadataHash).to.not.be.undefined;",
+                                            "    pm.collectionVariables.set('metadata_hash', response.metadataHash);",
+                                            "    pm.collectionVariables.set('reg_con_id', response.regConId);",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                },
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "exec": [
+                                            "// Gerar um UUID único para este request",
+                                            "const uniqueRegConId = pm.variables.replaceIn('{{$randomUUID}}');",
+                                            "// Salvar nas variáveis da collection para usar no vehicleData",
+                                            "pm.collectionVariables.set('current_reg_con_id', uniqueRegConId);",
+                                            "console.log('RegConId gerado para este request:', uniqueRegConId);"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{jwt_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"regConId\": \"{{current_reg_con_id}}\",\n  \"numeroContrato\": \"{{$randomInt}}\",\n  \"dataContrato\": \"2024-01-15\",\n  \"vehicleData\": {\n    \"regConId\": \"{{current_reg_con_id}}\",\n    \"numeroContrato\": \"{{$randomInt}}\",\n    \"dataContrato\": \"2024-01-15\",\n    \"chassiVeiculo\": \"CH{{$randomAlphaNumeric}}{{$randomInt}}\",\n    \"placaVeiculo\": \"PL{{$randomInt}}\",\n    \"marcaVeiculo\": \"TOYOTA\",\n    \"modeloVeiculo\": \"COROLLA\",\n    \"valorTotalContrato\": \"50000.0\"\n  }\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/contracts",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "contracts"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "3. Test Blockchain Query",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test('Consulta blockchain funcionando', function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "    const response = pm.response.json();",
+                                            "    pm.expect(response.success).to.be.true;",
+                                            "    pm.expect(response.data.contractRecord).to.not.be.undefined;",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/blockchain/contract/registry/{{reg_con_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "blockchain",
+                                        "contract",
+                                        "registry",
+                                        "{{reg_con_id}}"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "4. Test Hybrid Query",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "pm.test('Consulta híbrida funcionando', function () {",
+                                            "    pm.response.to.have.status(200);",
+                                            "    const response = pm.response.json();",
+                                            "    pm.expect(response.success).to.be.true;",
+                                            "    pm.expect(response.data.onChain).to.not.be.undefined;",
+                                            "    pm.expect(response.data.offChain).to.not.be.undefined;",
+                                            "});"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/contracts/{{reg_con_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "contracts",
+                                        "{{reg_con_id}}"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Write Operations",
+            "description": "Operações de escrita no contrato inteligente - requer autenticação",
+            "item": [
+                {
+                    "name": "Update Metadata Hash",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tokenId\": \"{{token_id}}\",\n    \"newMetadataHash\": \"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contract/metadata",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contract",
+                                "metadata"
+                            ]
+                        },
+                        "description": "Atualiza o hash de metadados de um contrato existente"
+                    }
+                },
+                {
+                    "name": "Update Contract Status",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tokenId\": \"{{token_id}}\",\n    \"active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/contract/status",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "contract",
+                                "status"
+                            ]
+                        },
+                        "description": "Ativa ou desativa um contrato existente"
+                    }
+                },
+                {
+                    "name": "Update Server Config (Admin)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"metadataBaseUrl\": \"https://api.vfinance.com.br/metadata/\",\n    \"apiServerAddress\": \"0x1234567890123456789012345678901234567890\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/admin/config",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "admin",
+                                "config"
+                            ]
+                        },
+                        "description": "Atualiza configurações do servidor (apenas admin)"
+                    }
+                },
+                {
+                    "name": "Register Brand (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"brandName\": \"Toyota\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/admin/brand",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "admin",
+                                "brand"
+                            ]
+                        },
+                        "description": "Registra uma nova marca de veículo (apenas admin)"
+                    }
+                },
+                {
+                    "name": "Register Model (Admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"modelName\": \"Corolla\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/blockchain/admin/model",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "blockchain",
+                                "admin",
+                                "model"
+                            ]
+                        },
+                        "description": "Registra um novo modelo de veículo (apenas admin)"
+                    }
+                }
+            ]
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "console.log('Executando requisição para:', pm.request.url.toString());"
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "pm.test('Response time is less than 5000ms', function () {",
+                    "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                    "});",
+                    "",
+                    "pm.test('Response should not have errors', function () {",
+                    "    pm.response.to.not.have.status(500);",
+                    "});"
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000",
+            "type": "string",
+            "description": "URL base da API MobX"
+        },
+        {
+            "key": "jwt_token",
+            "value": "",
+            "type": "string",
+            "description": "Token JWT para autenticação (preenchido automaticamente)"
+        },
+        {
+            "key": "metadata_hash",
+            "value": "",
+            "type": "string",
+            "description": "Hash dos metadados (preenchido automaticamente)"
+        },
+        {
+            "key": "reg_con_id",
+            "value": "",
+            "type": "string",
+            "description": "Registry ID do contrato (preenchido automaticamente)"
+        },
+        {
+            "key": "current_reg_con_id",
+            "value": "",
+            "type": "string",
+            "description": "RegConId atual sendo usado no request (gerado automaticamente)"
+        },
+        {
+            "key": "token_id",
+            "value": "1",
+            "type": "string",
+            "description": "Token ID do ERC721"
+        },
+        {
+            "key": "test_chassis",
+            "value": "CH123456",
+            "type": "string",
+            "description": "Chassi para testes"
+        }
+    ]
+}

@@ -16,6 +16,7 @@ type VehicleMetadata struct {
 // ContractRegistry representa o registro do contrato
 type ContractRegistry struct {
 	RegConId     string           `gorm:"primaryKey;size:50" json:"reg_con_id"`
+	TokenId      string           `gorm:"size:50;index" json:"token_id"` // ✅ Campo adicionado
 	MetadataHash string           `gorm:"size:64;index" json:"metadata_hash"`
 	BlockchainTx string           `gorm:"size:66" json:"blockchain_tx"`
 	Status       string           `gorm:"size:20;default:active;index" json:"status"`
@@ -62,6 +63,8 @@ type VehicleData struct {
 	EspecieVeiculo                        string `json:"especieVeiculo"`
 	MarcaVeiculo                          string `json:"marcaVeiculo"`
 	ModeloVeiculo                         string `json:"modeloVeiculo"`
+	BrandName                             string `json:"brandName,omitempty"`
+	ModelName                             string `json:"modelName,omitempty"`
 	TipoRestricacaoContrato               string `json:"tipoRestricacaoContrato"`
 	UfRegistroContrato                    string `json:"ufRegistroContrato"`
 	CnpjResponsavelPeloRegistro           string `json:"cnpjResponsavelPeloRegistro"`
@@ -89,10 +92,15 @@ type VehicleData struct {
 	IndicativoComissaoContrato            string `json:"indicativoComissaoContrato"`
 	ComissaoContrato                      string `json:"comissaoContrato"`
 	CategoriaVeiculo                      string `json:"categoriaVeiculo"`
+
+	Chassis      string `json:"chassis,omitempty"`      // Campo para compatibilidade com blockchain
+	LicensePlate string `json:"licensePlate,omitempty"` // Campo para compatibilidade com blockchain
+	TotalValue   string `json:"totalValue,omitempty"`   // Campo para compatibilidade com blockchain
 }
 
 // ContractRecord representa os dados on-chain do contrato
 type ContractRecord struct {
+	TokenId        string `json:"tokenId"` // ✅ Campo adicionado
 	RegConId       string `json:"regConId"`
 	NumeroContrato string `json:"numeroContrato"`
 	DataContrato   string `json:"dataContrato"`

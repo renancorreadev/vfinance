@@ -1,3 +1,41 @@
+// @title MobX API - VFinance Registry
+// @version 3.0.0
+// @description API para registro e consulta de contratos de financiamento automotivo utilizando blockchain Hyperledger Besu e contratos inteligentes UUPS
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name MobX API Support
+// @contact.email support@mobx-api.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host 144.22.179.183:3000
+// @BasePath /
+// @schemes http https
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Digite "Bearer" seguido de um espaço e o token JWT
+
+// @tag.name health
+// @tag.description Health check da API
+
+// @tag.name auth
+// @tag.description Autenticação JWT
+
+// @tag.name blockchain
+// @tag.description Consultas diretas ao contrato inteligente - apenas dados on-chain
+
+// @tag.name contracts
+// @tag.description Operações híbridas que combinam dados on-chain e off-chain
+
+// @tag.name metadata
+// @tag.description Operações CRUD para metadados de veículos
+
+// @tag.name write-operations
+// @tag.description Operações de escrita no contrato inteligente - requer autenticação
+
 package main
 
 import (

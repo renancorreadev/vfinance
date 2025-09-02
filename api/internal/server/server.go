@@ -1,6 +1,7 @@
 package server
 
 import (
+	"time"
 	"vfinance-api/docs"
 	"vfinance-api/internal/blockchain"
 	"vfinance-api/internal/config"
@@ -8,6 +9,7 @@ import (
 	"vfinance-api/internal/middleware"
 	"vfinance-api/internal/services"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -48,10 +50,22 @@ func (s *Server) setupRoutes() error {
 	authHandler := handlers.NewAuthHandler(s.config.JWTSecret)
 	metadataHandler := handlers.NewMetadataHandler(metadataService)
 	contractHandler := handlers.NewContractHandler(contractService)
+	blockchainHandler := handlers.NewBlockchainHandler(blockchainClient)
 
 	// Middleware global
 	s.router.Use(middleware.RateLimit())
 	s.router.Use(gin.Recovery())
+
+			// Configurar CORS para permitir requisições do Swagger
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "Accept", "X-Requested-With"}
+	corsConfig.ExposeHeaders = []string{"Authorization"}
+	corsConfig.AllowCredentials = true
+	corsConfig.MaxAge = 12 * time.Hour
+
+	s.router.Use(cors.New(corsConfig))
 
 	// Rotas da API
 	api := s.router.Group("/api")
@@ -72,7 +86,7 @@ func (s *Server) setupRoutes() error {
 			metadata.DELETE("/:hash", middleware.JWTAuth(s.config.JWTSecret), metadataHandler.DeleteMetadata)
 		}
 
-		// Rotas de contratos
+		// Rotas de contratos (híbridas - on-chain + off-chain)
 		contracts := api.Group("/contracts")
 		{
 			contracts.POST("/", middleware.JWTAuth(s.config.JWTSecret), contractHandler.RegisterContract)
@@ -84,6 +98,47 @@ func (s *Server) setupRoutes() error {
 			contracts.GET("/chassis/:chassis", contractHandler.GetContractByChassis)
 			contracts.GET("/metadata-url/:hash", contractHandler.GetMetadataUrl)
 			contracts.GET("/metadata-url/registry/:registryId", contractHandler.GetMetadataUrlByRegistryId)
+
+			// Rota administrativa para sincronização
+			contracts.POST("/sync", middleware.JWTAuth(s.config.JWTSecret), contractHandler.SyncBlockchainData)
+		}
+
+		// Rotas de blockchain (apenas on-chain)
+		blockchain := api.Group("/blockchain")
+		{
+			// Consultas de contratos
+			blockchain.GET("/contract/token/:tokenId", blockchainHandler.GetContractByTokenId)
+			blockchain.GET("/contract/registry/:registryId", blockchainHandler.GetContractByRegistryId)
+			blockchain.GET("/contract/hash/:hash", blockchainHandler.GetContractByHash)
+			blockchain.GET("/contract/chassis/:chassis", blockchainHandler.GetContractByChassis)
+
+			// Listas e contadores
+			blockchain.GET("/contracts/active", blockchainHandler.GetActiveContracts)
+			blockchain.GET("/contracts/total", blockchainHandler.GetTotalSupply)
+
+			// Verificações de existência
+			blockchain.GET("/contract/exists/:registryId", blockchainHandler.DoesContractExist)
+			blockchain.GET("/hash/exists/:hash", blockchainHandler.DoesHashExist)
+
+			// Informações de marca e modelo
+			blockchain.GET("/brand/:brandId", blockchainHandler.GetBrandName)
+			blockchain.GET("/model/:modelId", blockchainHandler.GetModelName)
+
+			// URLs de metadados
+			blockchain.GET("/metadata-url/:hash", blockchainHandler.GetMetadataUrl)
+			blockchain.GET("/metadata-url/registry/:registryId", blockchainHandler.GetMetadataUrlByRegistryId)
+
+			// Informações do contrato
+			blockchain.GET("/version", blockchainHandler.GetVersion)
+
+			// Operações de escrita (requer autenticação)
+			blockchain.PUT("/contract/metadata", middleware.JWTAuth(s.config.JWTSecret), blockchainHandler.UpdateMetadataHash)
+			blockchain.PUT("/contract/status", middleware.JWTAuth(s.config.JWTSecret), blockchainHandler.UpdateStatus)
+
+			// Operações administrativas (requer autenticação)
+			blockchain.PUT("/admin/server-config", middleware.JWTAuth(s.config.JWTSecret), blockchainHandler.UpdateServerConfig)
+			blockchain.POST("/admin/brand", middleware.JWTAuth(s.config.JWTSecret), blockchainHandler.RegisterBrand)
+			blockchain.POST("/admin/model", middleware.JWTAuth(s.config.JWTSecret), blockchainHandler.RegisterModel)
 		}
 	}
 
@@ -94,7 +149,7 @@ func (s *Server) setupRoutes() error {
 
 	// Configurar Swagger
 	docs.SwaggerInfo.BasePath = "/"
-	docs.SwaggerInfo.Host = "localhost:" + s.config.Port
+	docs.SwaggerInfo.Host = "144.22.179.183:" + s.config.Port
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
 	// Rotas do Swagger
@@ -111,5 +166,5 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	return s.router.Run(":" + s.config.Port)
+	return s.router.Run("0.0.0.0:" + s.config.Port)
 }

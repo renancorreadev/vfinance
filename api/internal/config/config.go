@@ -24,7 +24,7 @@ func Load() (*Config, error) {
 	return &Config{
 		Port:            getEnv("API_PORT", "3000"),
 		DatabaseURL:     getEnv("DATABASE_URL", "postgres://user:password@localhost/vfinance?sslmode=disable"),
-		RedisURL:        getEnv("REDIS_URL", "redis://localhost:6379"),
+		RedisURL:        getEnv("REDIS_URL", "redis://localhost:6380"),
 		EthereumRPC:     getEnv("ETHEREUM_RPC", "http://localhost:8545"),
 		ContractAddress: getEnv("CONTRACT_ADDRESS", ""),
 		PrivateKey:      getEnv("PRIVATE_KEY", ""),

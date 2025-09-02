@@ -20,7 +20,7 @@ func NewMetadataService(db *gorm.DB) *MetadataService {
 }
 
 func (s *MetadataService) StoreMetadata(hash string, vehicleData models.VehicleData) error {
-	// Debug: verificar se hash já existe
+	// Verificar se hash já existe
 	var existing models.VehicleMetadata
 	if err := s.db.First(&existing, "hash = ?", hash).Error; err == nil {
 		// Hash já existe - vamos ver o que tem lá

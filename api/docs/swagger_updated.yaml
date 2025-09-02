@@ -1,0 +1,1469 @@
+openapi: 3.0.3
+info:
+  title: MobX API - V3 (Blockchain + Hybrid)
+  description: |
+    Collection completa para testar a API MobX - Sistema de Metadados, Contratos Híbridos e Consultas On-Chain
+
+    ## Características Principais:
+    - **Blockchain**: Hyperledger Besu com 4 nós
+    - **Smart Contract**: VFinanceRegistry.sol com padrão UUPS
+    - **Token ERC721**: Sistema de registry não-transferível
+    - **Autenticação**: JWT Bearer Token
+    - **Metadados**: Armazenamento off-chain com hash on-chain
+    - **Rastreabilidade**: Busca por Registry ID, Token ID, Chassi
+    - **Sistema Híbrido**: Combina dados on-chain e off-chain
+
+    ## Endpoints Principais:
+    - **Health Check**: Verificação de status da API
+    - **Autenticação**: Geração e validação de tokens JWT
+    - **Blockchain (On-Chain Only)**: Consultas diretas ao contrato inteligente
+    - **Contracts (Hybrid)**: Operações híbridas on-chain + off-chain
+    - **Metadata**: CRUD de metadados de veículos
+    - **Write Operations**: Operações de escrita no contrato (requer autenticação)
+
+    Para testar a API, primeiro obtenha um token JWT no endpoint `/api/auth/token`.
+  version: 3.0.0
+  contact:
+    name: MobX API Support
+    email: support@mobx-api.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor de Desenvolvimento Local
+  - url: http://147.93.11.54:3001
+    description: Servidor de Produção
+
+tags:
+  - name: health
+    description: Health check da API
+  - name: auth
+    description: Autenticação JWT
+  - name: blockchain
+    description: Consultas diretas ao contrato inteligente - apenas dados on-chain
+  - name: contracts
+    description: Operações híbridas que combinam dados on-chain e off-chain
+  - name: metadata
+    description: Operações CRUD para metadados de veículos
+  - name: write-operations
+    description: Operações de escrita no contrato inteligente - requer autenticação
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health Check
+      description: Verifica se a API está funcionando
+      responses:
+        '200':
+          description: API funcionando corretamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+
+  /api/auth/token:
+    post:
+      tags:
+        - auth
+      summary: Generate Token
+      description: Gera um token JWT válido para autenticação
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Token gerado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Token JWT válido
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/validate:
+    get:
+      tags:
+        - auth
+      summary: Validate Token
+      description: Valida um token JWT
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token válido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+        '401':
+          description: Token inválido ou expirado
+        '500':
+          description: Erro interno do servidor
+
+  # Blockchain (On-Chain Only) Endpoints
+  /api/blockchain/contract/token/{tokenId}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Contract by Token ID
+      description: Busca contrato on-chain por Token ID do ERC721
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Token ID do ERC721
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainResponse'
+        '404':
+          description: Contrato não encontrado
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/contract/registry/{regConId}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Contract by Registry ID
+      description: Busca contrato on-chain por Registry ID
+      parameters:
+        - name: regConId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Registry ID do contrato
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainResponse'
+        '404':
+          description: Contrato não encontrado
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/contract/hash/{metadataHash}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Contract by Hash
+      description: Busca contrato on-chain por Metadata Hash
+      parameters:
+        - name: metadataHash
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hash dos metadados
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainResponse'
+        '404':
+          description: Contrato não encontrado
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/contract/chassis/{chassis}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Contract by Chassis
+      description: Busca contrato on-chain por Chassi
+      parameters:
+        - name: chassis
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Chassi do veículo
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainResponse'
+        '404':
+          description: Contrato não encontrado
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/contracts/active:
+    get:
+      tags:
+        - blockchain
+      summary: Get Active Contracts
+      description: Lista contratos ativos on-chain com paginação
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: Offset para paginação
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: Limite de resultados por página
+      responses:
+        '200':
+          description: Lista de contratos ativos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveContractsResponse'
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/contracts/total:
+    get:
+      tags:
+        - blockchain
+      summary: Get Total Supply
+      description: Obtém total de contratos on-chain
+      responses:
+        '200':
+          description: Total de contratos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotalSupplyResponse'
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/contract/exists/{regConId}:
+    get:
+      tags:
+        - blockchain
+      summary: Check Contract Exists
+      description: Verifica se contrato existe on-chain
+      parameters:
+        - name: regConId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Registry ID do contrato
+      responses:
+        '200':
+          description: Verificação realizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExistsResponse'
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/hash/exists/{metadataHash}:
+    get:
+      tags:
+        - blockchain
+      summary: Check Hash Exists
+      description: Verifica se hash existe on-chain
+      parameters:
+        - name: metadataHash
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hash dos metadados
+      responses:
+        '200':
+          description: Verificação realizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExistsResponse'
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/brand/{brandId}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Brand Name
+      description: Obtém nome da marca por ID on-chain
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID da marca
+      responses:
+        '200':
+          description: Nome da marca
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandResponse'
+        '404':
+          description: Marca não encontrada
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/model/{modelId}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Model Name
+      description: Obtém nome do modelo por ID on-chain
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do modelo
+      responses:
+        '200':
+          description: Nome do modelo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelResponse'
+        '404':
+          description: Modelo não encontrado
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/metadata-url/{metadataHash}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Metadata URL by Hash
+      description: Obtém URL dos metadados por hash on-chain
+      parameters:
+        - name: metadataHash
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hash dos metadados
+      responses:
+        '200':
+          description: URL dos metadados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataUrlResponse'
+        '404':
+          description: URL não encontrada
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/metadata-url/registry/{regConId}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Metadata URL by Registry ID
+      description: Obtém URL dos metadados por registry ID on-chain
+      parameters:
+        - name: regConId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Registry ID do contrato
+      responses:
+        '200':
+          description: URL dos metadados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataUrlResponse'
+        '404':
+          description: URL não encontrada
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/version:
+    get:
+      tags:
+        - blockchain
+      summary: Get Contract Version
+      description: Obtém versão do contrato inteligente
+      responses:
+        '200':
+          description: Versão do contrato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+        '500':
+          description: Erro interno do servidor
+
+  # Contracts (Hybrid) Endpoints
+  /api/contracts:
+    post:
+      tags:
+        - contracts
+      summary: Register Contract
+      description: Registra novo contrato (híbrido - blockchain + banco local)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractRegistrationRequest'
+      responses:
+        '201':
+          description: Contrato registrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractRegistrationResponse'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '500':
+          description: Erro interno do servidor
+
+  /api/contracts/{regConId}:
+    get:
+      tags:
+        - contracts
+      summary: Get Contract by Registry ID
+      description: Busca contrato híbrido por Registry ID
+      parameters:
+        - name: regConId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Registry ID do contrato
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HybridContractResponse'
+        '404':
+          description: Contrato não encontrado
+        '500':
+          description: Erro interno do servidor
+
+  /api/contracts/hash/{metadataHash}:
+    get:
+      tags:
+        - contracts
+      summary: Get Contract by Hash
+      description: Busca contrato híbrido por Metadata Hash
+      parameters:
+        - name: metadataHash
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hash dos metadados
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HybridContractResponse'
+        '404':
+          description: Contrato não encontrado
+        '500':
+          description: Erro interno do servidor
+
+  /api/contracts/chassis/{chassis}:
+    get:
+      tags:
+        - contracts
+      summary: Get Contract by Chassis
+      description: Busca contrato híbrido por Chassi
+      parameters:
+        - name: chassis
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Chassi do veículo
+      responses:
+        '200':
+          description: Contrato encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HybridContractResponse'
+        '404':
+          description: Contrato não encontrado
+        '500':
+          description: Erro interno do servidor
+
+  /api/contracts/active:
+    get:
+      tags:
+        - contracts
+      summary: Get Active Contracts
+      description: Lista contratos ativos (híbrido)
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: Offset para paginação
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: Limite de resultados por página
+      responses:
+        '200':
+          description: Lista de contratos ativos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HybridActiveContractsResponse'
+        '500':
+          description: Erro interno do servidor
+
+  /api/contracts/stats:
+    get:
+      tags:
+        - contracts
+      summary: Get Contract Stats
+      description: Estatísticas dos contratos (híbrido)
+      responses:
+        '200':
+          description: Estatísticas dos contratos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractStatsResponse'
+        '500':
+          description: Erro interno do servidor
+
+  # Metadata Endpoints
+  /api/metadata/{metadataHash}:
+    post:
+      tags:
+        - metadata
+      summary: Store Metadata
+      description: Armazena metadados de um veículo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: metadataHash
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hash dos metadados
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetadataRequest'
+      responses:
+        '201':
+          description: Metadados armazenados com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataResponse'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '500':
+          description: Erro interno do servidor
+    get:
+      tags:
+        - metadata
+      summary: Get Metadata
+      description: Busca metadados de um veículo pelo hash
+      parameters:
+        - name: metadataHash
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Hash dos metadados
+      responses:
+        '200':
+          description: Metadados encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataResponse'
+        '404':
+          description: Metadados não encontrados
+        '500':
+          description: Erro interno do servidor
+
+  # Write Operations Endpoints
+  /api/blockchain/contract/metadata:
+    put:
+      tags:
+        - write-operations
+      summary: Update Metadata Hash
+      description: Atualiza o hash de metadados de um contrato existente
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMetadataRequest'
+      responses:
+        '200':
+          description: Hash atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/contract/status:
+    put:
+      tags:
+        - write-operations
+      summary: Update Contract Status
+      description: Ativa ou desativa um contrato existente
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatusRequest'
+      responses:
+        '200':
+          description: Status atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/admin/config:
+    put:
+      tags:
+        - write-operations
+      summary: Update Server Config (Admin)
+      description: Atualiza configurações do servidor (apenas admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerConfigRequest'
+      responses:
+        '200':
+          description: Configurações atualizadas com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '403':
+          description: Acesso negado (não é admin)
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/admin/brand:
+    post:
+      tags:
+        - write-operations
+      summary: Register Brand (Admin)
+      description: Registra uma nova marca de veículo (apenas admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandRegistrationRequest'
+      responses:
+        '201':
+          description: Marca registrada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandRegistrationResponse'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '403':
+          description: Acesso negado (não é admin)
+        '500':
+          description: Erro interno do servidor
+
+  /api/blockchain/admin/model:
+    post:
+      tags:
+        - write-operations
+      summary: Register Model (Admin)
+      description: Registra um novo modelo de veículo (apenas admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelRegistrationRequest'
+      responses:
+        '201':
+          description: Modelo registrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelRegistrationResponse'
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autorizado
+        '403':
+          description: Acesso negado (não é admin)
+        '500':
+          description: Erro interno do servidor
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Mensagem de erro
+        code:
+          type: string
+          description: Código de erro
+        details:
+          type: object
+          description: Detalhes adicionais do erro
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Mensagem de sucesso
+
+    # Blockchain Response Schemas
+    BlockchainResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ContractRecord'
+
+    ContractRecord:
+      type: object
+      properties:
+        registryId:
+          type: string
+          description: Registry ID do contrato
+        contractNumber:
+          type: string
+          description: Número do contrato
+        contractDate:
+          type: integer
+          description: Data do contrato (timestamp)
+        metadataHash:
+          type: string
+          description: Hash dos metadados
+        timestamp:
+          type: integer
+          description: Timestamp de registro
+        registeredBy:
+          type: string
+          description: Endereço do registrador
+        active:
+          type: boolean
+          description: Status ativo do contrato
+
+    ActiveContractsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractRecord'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    TotalSupplyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            totalSupply:
+              type: integer
+              description: Total de contratos
+
+    ExistsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            exists:
+              type: boolean
+              description: Se o contrato/hash existe
+
+    BrandResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            brandName:
+              type: string
+              description: Nome da marca
+
+    ModelResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            modelName:
+              type: string
+              description: Nome do modelo
+
+    MetadataUrlResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            metadataUrl:
+              type: string
+              description: URL dos metadados
+
+    VersionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            version:
+              type: string
+              description: Versão do contrato
+
+    # Contract Registration Schemas
+    ContractRegistrationRequest:
+      type: object
+      required:
+        - regConId
+        - numeroContrato
+        - dataContrato
+        - vehicleData
+      properties:
+        regConId:
+          type: string
+          description: Registry ID único do contrato
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        numeroContrato:
+          type: string
+          description: Número do contrato
+          example: "12345"
+        dataContrato:
+          type: string
+          format: date
+          description: Data do contrato
+          example: "2024-01-15"
+        vehicleData:
+          $ref: '#/components/schemas/VehicleData'
+
+    VehicleData:
+      type: object
+      required:
+        - regConId
+        - numeroContrato
+        - dataContrato
+        - chassiVeiculo
+        - placaVeiculo
+        - marcaVeiculo
+        - modeloVeiculo
+        - valorTotalContrato
+      properties:
+        regConId:
+          type: string
+          description: Registry ID do contrato
+        numeroContrato:
+          type: string
+          description: Número do contrato
+        dataContrato:
+          type: string
+          format: date
+          description: Data do contrato
+        cnpjAgenteFinanceiro:
+          type: string
+          description: CNPJ do agente financeiro
+          example: "03817784000133"
+        nomeAgenteFinanceiro:
+          type: string
+          description: Nome do agente financeiro
+          example: "NATAL CAR VEICULOS LTDA"
+        enderecoAgenteFinanceiro:
+          type: string
+          description: Endereço do agente financeiro
+        numeroEnderecoAgenteFinanceiro:
+          type: string
+          description: Número do endereço
+        complementoEnderecoAgenteFinanceiro:
+          type: string
+          description: Complemento do endereço
+        bairroEnderecoAgenteFinanceiro:
+          type: string
+          description: Bairro do endereço
+        nomeMunicipioEnderecoAgenteFinanceiro:
+          type: string
+          description: Município do endereço
+        ufEnderecoAgenteFinanceiro:
+          type: string
+          description: UF do endereço
+        cepEnderecoAgenteFinanceiro:
+          type: string
+          description: CEP do endereço
+        telefoneAgenteFinanceiro:
+          type: string
+          description: Telefone do agente financeiro
+        emailAgenteFinanceiro:
+          type: string
+          description: Email do agente financeiro
+        cpfCnpjProprietario:
+          type: string
+          description: CPF/CNPJ do proprietário
+        nomeProprietario:
+          type: string
+          description: Nome do proprietário
+        enderecoProprietario:
+          type: string
+          description: Endereço do proprietário
+        numeroEnderecoProprietario:
+          type: string
+          description: Número do endereço do proprietário
+        bairroEnderecoProprietario:
+          type: string
+          description: Bairro do endereço do proprietário
+        nomeMunicipioEnderecoProprietario:
+          type: string
+          description: Município do endereço do proprietário
+        ufEnderecoProprietario:
+          type: string
+          description: UF do endereço do proprietário
+        cepEnderecoProprietario:
+          type: string
+          description: CEP do endereço do proprietário
+        telefoneProprietario:
+          type: string
+          description: Telefone do proprietário
+        emailProprietario:
+          type: string
+          description: Email do proprietário
+        veiculoZeroKm:
+          type: boolean
+          description: Se o veículo é zero km
+        chassiVeiculo:
+          type: string
+          description: Chassi do veículo
+        chassiRemarcadoVeiculo:
+          type: string
+          description: Chassi remarcado (se aplicável)
+        placaVeiculo:
+          type: string
+          description: Placa do veículo
+        tipoPlacaVeiculo:
+          type: string
+          description: Tipo da placa
+          example: "MERCOSUL"
+        ufPlacaVeiculo:
+          type: string
+          description: UF da placa
+        renavamVeiculo:
+          type: string
+          description: RENAVAM do veículo
+        anoFabricacaoVeiculo:
+          type: string
+          description: Ano de fabricação
+        anoModeloVeiculo:
+          type: string
+          description: Ano do modelo
+        numeroRestricaoVeiculo:
+          type: string
+          description: Número de restrição
+        especieVeiculo:
+          type: string
+          description: Espécie do veículo
+          example: "AUTOMOVEL"
+        marcaVeiculo:
+          type: string
+          description: Marca do veículo
+          example: "TOYOTA"
+        modeloVeiculo:
+          type: string
+          description: Modelo do veículo
+          example: "COROLLA ALTIS 2.0"
+        tipoRestricacaoContrato:
+          type: string
+          description: Tipo de restrição do contrato
+          example: "ALIENACAO FIDUCIARIA"
+        ufRegistroContrato:
+          type: string
+          description: UF do registro do contrato
+        cnpjResponsavelPeloRegistro:
+          type: string
+          description: CNPJ responsável pelo registro
+        valorTotalContrato:
+          type: string
+          description: Valor total do contrato
+          example: "85000.0"
+        valorParcelaContrato:
+          type: string
+          description: Valor da parcela
+          example: "1416.67"
+        quantidadeParcelasContrato:
+          type: string
+          description: Quantidade de parcelas
+          example: "60"
+        taxaJurosMesContrato:
+          type: string
+          description: Taxa de juros mensal
+          example: "1.2"
+        taxaJurosMesAnoContrato:
+          type: string
+          description: Taxa de juros anual
+          example: "15.39"
+        possuiJurosMultaContrato:
+          type: string
+          description: Se possui juros de multa
+          example: "S"
+        taxaJurosMultaContrato:
+          type: string
+          description: Taxa de juros de multa
+          example: "2.0"
+        possuiJurosMoraDiaContrato:
+          type: string
+          description: Se possui juros de mora diário
+          example: "S"
+        taxaJurosMoraDiaContrato:
+          type: string
+          description: Taxa de juros de mora diário
+          example: "0.033"
+        valorCustoRegistroContrato:
+          type: string
+          description: Valor do custo de registro
+          example: "150.00"
+        valorIofContrato:
+          type: string
+          description: Valor do IOF
+          example: "425.00"
+        dataVencimentoPrimeiraParcelaContrato:
+          type: string
+          format: date
+          description: Data de vencimento da primeira parcela
+          example: "2024-02-15"
+        dataVencimentoUltimaParcelaContrato:
+          type: string
+          format: date
+          description: Data de vencimento da última parcela
+          example: "2029-01-15"
+        dataLiberacaoCreditoContrato:
+          type: string
+          format: date
+          description: Data de liberação do crédito
+          example: "2024-01-15"
+        cidadeLiberacaoCreditoContrato:
+          type: string
+          description: Cidade de liberação do crédito
+        ufLiberacaoCreditoContrato:
+          type: string
+          description: UF de liberação do crédito
+        indiceCorrecaoContrato:
+          type: string
+          description: Índice de correção
+          example: "IPCA"
+        numeroGrupoConsorcioContrato:
+          type: string
+          description: Número do grupo do consórcio
+        numeroCotaConsorcioContrato:
+          type: string
+          description: Número da cota do consórcio
+        indicativoPenalidadeContrato:
+          type: string
+          description: Indicativo de penalidade
+          example: "S"
+        penalidadeContrato:
+          type: string
+          description: Valor da penalidade
+          example: "3.0"
+        indicativoComissaoContrato:
+          type: string
+          description: Indicativo de comissão
+          example: "S"
+        comissaoContrato:
+          type: string
+          description: Valor da comissão
+          example: "2.5"
+        categoriaVeiculo:
+          type: string
+          description: Categoria do veículo
+          example: "PASSEIO"
+
+    ContractRegistrationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Mensagem de sucesso
+        metadataHash:
+          type: string
+          description: Hash dos metadados gerado
+        regConId:
+          type: string
+          description: Registry ID do contrato
+        tokenId:
+          type: string
+          description: Token ID do ERC721
+
+    # Hybrid Contract Response Schemas
+    HybridContractResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            onChain:
+              $ref: '#/components/schemas/ContractRecord'
+            offChain:
+              $ref: '#/components/schemas/VehicleData'
+
+    HybridActiveContractsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/HybridContractResponse'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    ContractStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            totalContracts:
+              type: integer
+              description: Total de contratos
+            activeContracts:
+              type: integer
+              description: Contratos ativos
+            inactiveContracts:
+              type: integer
+              description: Contratos inativos
+
+    # Metadata Schemas
+    MetadataRequest:
+      type: object
+      required:
+        - regConId
+        - numeroContrato
+        - dataContrato
+        - chassiVeiculo
+        - placaVeiculo
+        - marcaVeiculo
+        - modeloVeiculo
+        - valorTotalContrato
+      properties:
+        regConId:
+          type: string
+          description: Registry ID do contrato
+        numeroContrato:
+          type: string
+          description: Número do contrato
+        dataContrato:
+          type: string
+          format: date
+          description: Data do contrato
+        cnpjAgenteFinanceiro:
+          type: string
+          description: CNPJ do agente financeiro
+        nomeAgenteFinanceiro:
+          type: string
+          description: Nome do agente financeiro
+        enderecoAgenteFinanceiro:
+          type: string
+          description: Endereço do agente financeiro
+        chassiVeiculo:
+          type: string
+          description: Chassi do veículo
+        placaVeiculo:
+          type: string
+          description: Placa do veículo
+        marcaVeiculo:
+          type: string
+          description: Marca do veículo
+        modeloVeiculo:
+          type: string
+          description: Modelo do veículo
+        valorTotalContrato:
+          type: string
+          description: Valor total do contrato
+        valorParcelaContrato:
+          type: string
+          description: Valor da parcela
+        quantidadeParcelasContrato:
+          type: string
+          description: Quantidade de parcelas
+        taxaJurosMesContrato:
+          type: string
+          description: Taxa de juros mensal
+        veiculoZeroKm:
+          type: boolean
+          description: Se o veículo é zero km
+        anoFabricacaoVeiculo:
+          type: string
+          description: Ano de fabricação
+        anoModeloVeiculo:
+          type: string
+          description: Ano do modelo
+
+    MetadataResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/MetadataRequest'
+
+    # Write Operations Schemas
+    UpdateMetadataRequest:
+      type: object
+      required:
+        - tokenId
+        - newMetadataHash
+      properties:
+        tokenId:
+          type: string
+          description: Token ID do contrato
+          example: "1"
+        newMetadataHash:
+          type: string
+          description: Novo hash dos metadados
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+
+    UpdateStatusRequest:
+      type: object
+      required:
+        - tokenId
+        - active
+      properties:
+        tokenId:
+          type: string
+          description: Token ID do contrato
+          example: "1"
+        active:
+          type: boolean
+          description: Novo status ativo/inativo
+
+    ServerConfigRequest:
+      type: object
+      required:
+        - metadataBaseUrl
+        - apiServerAddress
+      properties:
+        metadataBaseUrl:
+          type: string
+          description: URL base para metadados
+          example: "https://api.vfinance.com.br/metadata/"
+        apiServerAddress:
+          type: string
+          description: Endereço do servidor da API
+          example: "0x1234567890123456789012345678901234567890"
+
+    BrandRegistrationRequest:
+      type: object
+      required:
+        - brandName
+      properties:
+        brandName:
+          type: string
+          description: Nome da marca
+          example: "Toyota"
+
+    BrandRegistrationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            brandId:
+              type: integer
+              description: ID da marca registrada
+            brandName:
+              type: string
+              description: Nome da marca
+
+    ModelRegistrationRequest:
+      type: object
+      required:
+        - modelName
+      properties:
+        modelName:
+          type: string
+          description: Nome do modelo
+          example: "Corolla"
+
+    ModelRegistrationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            modelId:
+              type: integer
+              description: ID do modelo registrado
+            modelName:
+              type: string
+              description: Nome do modelo
+
+    # Common Schemas
+    Pagination:
+      type: object
+      properties:
+        offset:
+          type: integer
+          description: Offset atual
+        limit:
+          type: integer
+          description: Limite por página
+        total:
+          type: integer
+          description: Total de resultados
+        hasNext:
+          type: boolean
+          description: Se há próxima página
+        hasPrev:
+          type: boolean
+          description: Se há página anterior
+
