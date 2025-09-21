@@ -1,18 +1,20 @@
 basePath: /
 definitions:
-  models.ContractRegistrationExample:
+  models.ContractRegistrationRequest:
     properties:
       dataContrato:
-        example: "2024-01-15"
         type: string
       numeroContrato:
-        example: "668"
         type: string
       regConId:
-        example: b8d899ac-4a02-4e2d-a3d5-cada74d30927
         type: string
       vehicleData:
         $ref: '#/definitions/models.VehicleData'
+    required:
+    - dataContrato
+    - numeroContrato
+    - regConId
+    - vehicleData
     type: object
   models.ContractRegistrationResponse:
     properties:
@@ -739,7 +741,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.ContractRegistrationExample'
+          $ref: '#/definitions/models.ContractRegistrationRequest'
       produces:
       - application/json
       responses:

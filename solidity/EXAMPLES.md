@@ -819,3 +819,5 @@ Para mais exemplos, consulte:
 - [README.md](README.md) - Documentação completa
 - [Testes](test/VFinanceRegistryTest.t.sol) - Casos de uso nos testes
 - [Scripts](script/) - Scripts de exemplo prontos
+
+

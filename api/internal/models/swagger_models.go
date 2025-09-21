@@ -31,14 +31,6 @@ type Error struct {
 	Details string `json:"details,omitempty" example:"Detalhes do erro"`
 }
 
-// ContractRegistrationExample representa um exemplo de requisição para registro de contrato
-type ContractRegistrationExample struct {
-	RegConId       string      `json:"regConId" example:"b8d899ac-4a02-4e2d-a3d5-cada74d30927"`
-	NumeroContrato string      `json:"numeroContrato" example:"668"`
-	DataContrato   string      `json:"dataContrato" example:"2024-01-15"`
-	VehicleData    VehicleData `json:"vehicleData"`
-}
-
 // VehicleDataExample representa um exemplo de dados do veículo
 type VehicleDataExample struct {
 	RegConId                              string `json:"regConId" example:"b8d899ac-4a02-4e2d-a3d5-cada74d30927"`
